@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Monitoring & Outreach Pricing Calculator</title>
+<style>
+  :root{--brand:#0b63ce;--ink:#182236;--bg:#f5f7fb;--line:#e7ebf3}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;background:var(--bg);color:var(--ink)}
+  .wrap{max-width:1000px;margin:24px auto;padding:0 16px}
+  header{background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px 18px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+  header h1{font-size:18px;margin:0;color:var(--brand)}
+  .card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:20px}
+  .tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+  .tab{padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:#fafbfe;cursor:pointer;font-size:13px}
+  .tab.active{background:var(--brand);color:#fff;border-color:var(--brand)}
+  .tabview{display:none}
+  .tabview.active{display:block}
+  h2{font-size:16px;margin:6px 0 12px}
+  h3{font-size:14px;margin:14px 0 8px}
+  label{display:block;font-size:13px;margin:8px 0 4px}
+  input[type="number"], select{width:100%;padding:10px 12px;border:1px solid #d8dde6;border-radius:10px;font-size:14px}
+  input[type="checkbox"], input[type="radio"]{transform:translateY(1px)}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .muted{color:#5e6a85;font-size:12px}
+  .inline{display:flex;align-items:center;gap:8px}
+  .hr{height:1px;background:var(--line);margin:12px 0}
+  .disabled{opacity:.5;pointer-events:none}
+
+  /* Quote table */
+  .quote{background:#0f1b2f;color:#e8eefc;border-radius:16px;padding:16px}
+  .quote h2{margin:0 0 8px;color:#fff}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{border:1px solid #2a3854;padding:8px;text-align:left;vertical-align:top}
+  th{background:#14223b;color:#e8eefc}
+  td.nw{white-space:nowrap}
+  .section{background:#0b172d;color:#a9b7d3;font-weight:600}
+  .controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+  button{cursor:pointer;background:var(--brand);color:#fff;border:none;padding:10px 14px;border-radius:10px;font-weight:600}
+  button.secondary{background:#eef1f7;color:#111;border:1px solid var(--line)}
+  button.ghost{background:transparent;color:var(--brand);border:1px dashed var(--brand)}
+  .pill{display:inline-block;background:#eef4ff;color:#0b63ce;border:1px solid #cfe0ff;border-radius:999px;padding:2px 8px;font-size:12px}
+  .desc{white-space:pre-line}
+
+  /* Print styles for PDF (LANDSCAPE) */
+  @page { size: A4 landscape; margin: 12mm; }
+  @media print{
+    body{background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    header, .tabs, .controls, .card:not(.quote){display:none}
+    .wrap{max-width:none}
+    .quote{color:#000;background:#fff;border:none;padding:0}
+    table{border-collapse:collapse;width:100%}
+    th,td{border:1px solid #000;color:#000}
+    .section{background:#f2f5fb;color:#333}
+    tr,td,th{page-break-inside:avoid}
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>Monitoring & Outreach Pricing Calculator</h1>
+      <span class="pill">USD pricing • Per contract</span>
+    </header>
+
+    <!-- Configuration Panel -->
+    <div class="card">
+      <div class="tabs">
+        <div class="tab active" onclick="openTab(event,'core')">1. Base Platform</div>
+        <div class="tab" onclick="openTab(event,'addons')">2. Add-ons</div>
+      </div>
+
+      <!-- Core selection -->
+      <div id="core" class="tabview active">
+        <h2>Select Core Product(s)</h2>
+        <div class="row">
+          <div>
+            <label class="inline"><input type="checkbox" id="coreMonitoring" onchange="onCoreToggle()"> <strong>Monitoring Essentials (CisionOne)</strong></label>
+            <div class="muted desc" id="descMonitoring"></div>
+            <div class="row" style="margin-top:8px">
+              <div>
+                <label>Additional Monitoring Users (beyond 3 included)</label>
+                <input type="number" id="addUsersMonitoring" min="0" value="0" oninput="renderQuote()">
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <label class="inline"><input type="checkbox" id="coreOutreach" onchange="onCoreToggle()"> <strong>Outreach</strong></label>
+            <div class="muted desc" id="descOutreach"></div>
+            <div class="row" style="margin-top:8px">
+              <div>
+                <label>Additional Outreach Users (beyond 3 included)</label>
+                <input type="number" id="addUsersOutreach" min="0" value="0" oninput="renderQuote()">
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="hr"></div>
+        <div class="muted">Note: Add-ons are only available when <strong>Monitoring Essentials</strong> is selected. Discounts are edited directly in the quotation table.</div>
+      </div>
+
+      <!-- Add-ons -->
+      <div id="addons" class="tabview">
+        <h2>Add-ons (available with Monitoring Essentials)</h2>
+        <div id="addonsWrap"></div>
+        <div class="hr"></div>
+        <h3>CSL – Social Listening (Brandwatch)</h3>
+        <div id="cslBlock" class="stack"></div>
+      </div>
+    </div>
+
+    <!-- Quotation Preview BELOW -->
+    <div class="card quote" id="quoteCard">
+      <h2>Quotation</h2>
+      <div id="quoteTable"></div>
+      <div class="controls">
+        <button onclick="copyHTMLTable()">Copy Table</button>
+        <button class="secondary" onclick="exportCSV()">Export CSV</button>
+        <button class="ghost" onclick="window.print()">Print / Save PDF</button>
+        <button class="secondary" onclick="resetAll()">Reset</button>
+      </div>
+      <div class="muted" style="margin-top:8px">This is an estimate. Final pricing may vary based on scope and approvals.</div>
+    </div>
+  </div>
+
+<script>
+/* ================= Data ================= */
+const PRICING = {
+  core: {
+    monitoring: {
+      key: 'monitoring',
+      name: 'Monitoring Essentials (CisionOne)',
+      price: 8500,
+      includedUsers: 3,
+      description: `3 users
+Global Online News Monitoring across an unlimited number of mention streams
+Unlimited customisable dashboards & reporting across Instant Insights
+Access to the dedicated CisionOne Mobile & Tablet application.
+Access to the CisionOne Launchpad
+Automated Sentiment Analysis
+Cision React Score
+Google & Adobe Analytics Integration
+Digital Onboarding Plan (Including Webinars)
+Access to the CisionOne Knowledgebase
+Access to Cision Customer Portal`
+    },
+    outreach: {
+      key: 'outreach',
+      name: 'Outreach',
+      price: 9800,
+      includedUsers: 3,
+      description: `3 users
+Global Media Contacts
+Social Influencer Data
+Campaign management and reporting
+Email Press Release Distribution
+Custom Activities
+Talking About Search`
+    }
+  },
+  addons: [
+    { key:'regionalPrint', name:'Regional Print (SPH & SCMP)', price:2400, scope:'monitoring', description:'Local print and magazine contents for Singapore and Hong Kong. PDF clipping included.' },
+    { key:'standardPrint', name:'Standard Global Print (LexisNexis)', price:3700, scope:'monitoring', description:'Global print monitoring covering 10,000 publications. Text transcript only.' },
+    { key:'broadcastUSCAN', name:'Broadcast – US & Canada', price:2800, scope:'monitoring', description:'TVEyes TV & Radio content from United States & Canada' },
+    { key:'broadcastEUGlobal', name:'Broadcast – EU & Global', price:5800, scope:'monitoring', description:'TVEyes TV & Radio content from Europe and Rest of the World.' },
+    { key:'broadcastANZ', name:'Broadcast – ANZ', price:2600, scope:'monitoring', description:'TVEyes TV & Radio content from Australia & New Zealand' },
+    { key:'podcast', name:'Podcast', price:3700, scope:'monitoring', description:'TVEyes podcast contents.' },
+    { key:'socialListen', name:'CisionOne Social – Listen', price:5000, scope:'monitoring', description:'Social Listening capability covering X, Facebook, YouTube, Reddit, Instagram, BlueSky' },
+    { key:'socialEngage', name:'CisionOne Social – Engage', price:3300, scope:'monitoring', description:'Social publishing capability that allows users to manage and schedule social media posting across X, Facebook, LinkedIn, Instagram.' },
+  ],
+  additionalUser: {
+    monitoring: { key:'addUserMonitoring', name:'Additional user(s) – Monitoring', unitPrice:1500 },
+    outreach:   { key:'addUserOutreach',   name:'Additional user(s) – Outreach',   unitPrice:1500 }
+  },
+  csl: {
+    core: {
+      key:'cslCore', label:'Core',
+      description: 'For brands with < 60,000 mentions/month on main search. Includes unlimited Quick Search (30 days data), data saved per query for 1 year, up to 20 alerts, connect up to 20 social channels, and up to 5,000 exports/day.' ,
+      tiers: { 5: 3000, 10: 4700, 15: 6600, 20: 7200 }
+    },
+    premium: {
+      key:'cslPremium', label:'Premium',
+      description: 'For brands with ≥ 60,000 mentions/month on main search. Includes unlimited Quick Search (30 days data), data saved per query for 1 year, up to 20 alerts, connect up to 20 social channels, and up to 5,000 exports/day.' ,
+      tiers: { 5: 8400, 10: 13200, 15: 18500, 20: 20400 }
+    }
+  }
+};
+
+/* ================= State ================= */
+const state = {
+  core: { monitoring:false, outreach:false },
+  addUsers: { monitoring:0, outreach:0 },
+  addons: {}, // key -> { selected:true }
+  csl: { plan:null, queries:null } // plan: 'core' | 'premium'
+};
+// Per-line discounts store (key -> pct)
+const lineDiscounts = {};
+
+/* ================= Init UI ================= */
+function init(){
+  document.getElementById('descMonitoring').textContent = PRICING.core.monitoring.description;
+  document.getElementById('descOutreach').textContent = PRICING.core.outreach.description;
+
+  // Build add-ons list
+  const wrap = document.getElementById('addonsWrap');
+  wrap.className = 'stack';
+  PRICING.addons.forEach(a=>{
+    const id = `add_${a.key}`;
+    const row = document.createElement('div');
+    row.className = 'card';
+    row.style.border = '1px dashed var(--line)';
+    row.style.margin = '8px 0';
+    row.innerHTML = `
+      <label class="inline"><input type="checkbox" id="${id}" onchange="toggleAddon('${a.key}')"> <strong>${a.name}</strong></label>
+      <div class="muted desc">${a.description}</div>`;
+    wrap.appendChild(row);
+  });
+
+  // Build CSL block
+  const csl = document.getElementById('cslBlock');
+  csl.innerHTML = `
+    <div class="row">
+      <div>
+        <label class="inline"><input type="radio" name="cslPlan" value="core" onchange="onCSLPlanChange(this.value)"> <strong>Core</strong></label>
+        <div class="muted">${PRICING.csl.core.description}</div>
+      </div>
+      <div>
+        <label class="inline"><input type="radio" name="cslPlan" value="premium" onchange="onCSLPlanChange(this.value)"> <strong>Premium</strong></label>
+        <div class="muted">${PRICING.csl.premium.description}</div>
+      </div>
+    </div>
+    <div class="row" style="margin-top:8px">
+      <div>
+        <label>Queries</label>
+        <select id="cslQueries" onchange="onCSLQueriesChange(this.value)" disabled>
+          <option value="">Select queries</option>
+          <option value="5">5</option>
+          <option value="10">10</option>
+          <option value="15">15</option>
+          <option value="20">20</option>
+        </select>
+      </div>
+    </div>
+    <div class="muted" id="cslPriceHint">Choose a plan and query tier to see pricing.</div>
+  `;
+
+  renderQuote();
+  onCoreToggle();
+}
+
+/* ================= Interactions ================= */
+function openTab(e,id){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tabview').forEach(v=>v.classList.remove('active'));
+  e.currentTarget.classList.add('active');
+  document.getElementById(id).classList.add('active');
+}
+
+function onCoreToggle(){
+  state.core.monitoring = document.getElementById('coreMonitoring').checked;
+  state.core.outreach = document.getElementById('coreOutreach').checked;
+  state.addUsers.monitoring = +document.getElementById('addUsersMonitoring').value || 0;
+  state.addUsers.outreach = +document.getElementById('addUsersOutreach').value || 0;
+
+  // Enable/disable addons + CSL when monitoring not selected
+  const disable = !state.core.monitoring;
+  const addonsWrap = document.getElementById('addonsWrap');
+  const cslBlock = document.getElementById('cslBlock');
+  addonsWrap.classList.toggle('disabled', disable);
+  cslBlock.classList.toggle('disabled', disable);
+  addonsWrap.querySelectorAll('input').forEach(inp=> inp.disabled = disable ? true : false);
+  document.querySelectorAll('input[name="cslPlan"]').forEach(r=> r.disabled = disable);
+  document.getElementById('cslQueries').disabled = disable || !state.csl.plan;
+
+  renderQuote();
+}
+
+function toggleAddon(key){
+  const checked = document.getElementById(`add_${key}`).checked;
+  state.addons[key] = state.addons[key] || { selected:false };
+  state.addons[key].selected = checked;
+  renderQuote();
+}
+
+function onCSLPlanChange(plan){
+  state.csl.plan = plan; // 'core' | 'premium'
+  state.csl.queries = null;
+  document.getElementById('cslQueries').disabled = false;
+  document.getElementById('cslQueries').value = '';
+  updateCSLHint();
+  renderQuote();
+}
+
+function onCSLQueriesChange(q){
+  state.csl.queries = q ? +q : null;
+  updateCSLHint();
+  renderQuote();
+}
+
+function updateCSLHint(){
+  const hint = document.getElementById('cslPriceHint');
+  if (!state.core.monitoring){ hint.textContent = 'CSL requires Monitoring Essentials.'; return; }
+  if (!state.csl.plan){ hint.textContent = 'Choose Core or Premium to continue.'; return; }
+  if (!state.csl.queries){ hint.textContent = 'Select a query tier to see pricing.'; return; }
+  const tierPrice = PRICING.csl[state.csl.plan].tiers[state.csl.queries];
+  hint.textContent = `CSL ${state.csl.plan === 'core' ? 'Core' : 'Premium'} (${state.csl.queries} queries): $${tierPrice.toLocaleString()}`;
+}
+
+/* ================= Quote & Math ================= */
+function lineTotal(unitPrice, qty, discPct){
+  const gross = unitPrice * qty;
+  const disc = gross * (discPct/100);
+  return { gross, disc, net: gross - disc };
+}
+function setPerLineDiscount(key, pct){ lineDiscounts[key] = +pct || 0; renderQuote(); }
+function getPerLineDiscount(key){ return lineDiscounts[key]; }
+
+function renderQuote(){
+  // Sync state from inputs
+  state.addUsers.monitoring = +document.getElementById('addUsersMonitoring').value || 0;
+  state.addUsers.outreach = +document.getElementById('addUsersOutreach').value || 0;
+
+  const rows = [];
+  let totalDiscount = 0;
+  let grandTotal = 0;
+
+  // Base Platform
+  if (state.core.monitoring){
+    const p = PRICING.core.monitoring;
+    const discPct = getPerLineDiscount('discMonitoring') || 0;
+    const lt = lineTotal(p.price, 1, discPct);
+    rows.push({ section:'Base Platform', category:'Core', product:p.name, desc:p.description, qty:1, unit:p.price, discPct, gross:lt.gross, disc:lt.disc, net:lt.net, discKey:'discMonitoring' });
+    totalDiscount += lt.disc; grandTotal += lt.net;
+  }
+  if (state.core.outreach){
+    const p = PRICING.core.outreach;
+    const discPct = getPerLineDiscount('discOutreach') || 0;
+    const lt = lineTotal(p.price, 1, discPct);
+    rows.push({ section: state.core.monitoring?null:'Base Platform', category:'Core', product:p.name, desc:p.description, qty:1, unit:p.price, discPct, gross:lt.gross, disc:lt.disc, net:lt.net, discKey:'discOutreach' });
+    totalDiscount += lt.disc; grandTotal += lt.net;
+  }
+
+  // Add-ons (includes Additional Users)
+  let addonsStarted = false;
+
+  // Additional users (Monitoring)
+  if (state.core.monitoring && state.addUsers.monitoring>0){
+    const u = PRICING.additionalUser.monitoring;
+    const discPct = getPerLineDiscount(`disc_${u.key}`) || 0;
+    const lt = lineTotal(u.unitPrice, state.addUsers.monitoring, discPct);
+    rows.push({ section: addonsStarted?null:'Add-ons', category:'Add. Users', product:u.name, desc:`Beyond ${PRICING.core.monitoring.includedUsers} included`, qty:state.addUsers.monitoring, unit:u.unitPrice, discPct, gross:lt.gross, disc:lt.disc, net:lt.net, discKey:`disc_${u.key}` });
+    addonsStarted = true; totalDiscount += lt.disc; grandTotal += lt.net;
+  }
+
+  // Additional users (Outreach)
+  if (state.core.outreach && state.addUsers.outreach>0){
+    const u = PRICING.additionalUser.outreach;
+    const discPct = getPerLineDiscount(`disc_${u.key}`) || 0;
+    const lt = lineTotal(u.unitPrice, state.addUsers.outreach, discPct);
+    rows.push({ section: addonsStarted?null:'Add-ons', category:'Add. Users', product:u.name, desc:`Beyond ${PRICING.core.outreach.includedUsers} included`, qty:state.addUsers.outreach, unit:u.unitPrice, discPct, gross:lt.gross, disc:lt.disc, net:lt.net, discKey:`disc_${u.key}` });
+    addonsStarted = true; totalDiscount += lt.disc; grandTotal += lt.net;
+  }
+
+  // Regular add-ons (only when Monitoring selected)
+  if (state.core.monitoring){
+    PRICING.addons.forEach(a=>{
+      const sel = state.addons[a.key]?.selected;
+      const discPct = getPerLineDiscount(`disc_${a.key}`) || 0;
+      if (sel){
+        const lt = lineTotal(a.price, 1, discPct);
+        rows.push({ section: addonsStarted?null:'Add-ons', category:'Add-on', product:a.name, desc:a.description, qty:1, unit:a.price, discPct, gross:lt.gross, disc:lt.disc, net:lt.net, discKey:`disc_${a.key}` });
+        addonsStarted = true; totalDiscount += lt.disc; grandTotal += lt.net;
+      }
+    });
+
+    // CSL pack (single)
+    if (state.csl.plan && state.csl.queries){
+      const plan = PRICING.csl[state.csl.plan];
+      const unit = plan.tiers[state.csl.queries];
+      const discPct = getPerLineDiscount('cslDiscount') || 0;
+      const lt = lineTotal(unit, 1, discPct);
+      const name = `CSL – Social Listening (${plan.label}) – ${state.csl.queries} queries`;
+      const desc = plan.description;
+      rows.push({ section: addonsStarted?null:'Add-ons', category:'Add-on', product:name, desc, qty:1, unit, discPct, gross:lt.gross, disc:lt.disc, net:lt.net, discKey:'cslDiscount' });
+      addonsStarted = true; totalDiscount += lt.disc; grandTotal += lt.net;
+    }
+  }
+
+  // Render table
+  const tbl = document.createElement('table');
+  tbl.id = 'quoteTableInner';
+  tbl.innerHTML = `
+    <tr>
+      <th class="nw">Section</th>
+      <th class="nw">Category</th>
+      <th>Product</th>
+      <th>Description</th>
+      <th class="nw">Qty</th>
+      <th class="nw">Unit</th>
+      <th class="nw">Discount</th>
+      <th class="nw">Line Total</th>
+    </tr>`;
+  let currentSection = null;
+  rows.forEach(r=>{
+    if (r.section && r.section !== currentSection){
+      const trS = document.createElement('tr');
+      trS.innerHTML = `<td class="section" colspan="8">${r.section}</td>`;
+      tbl.appendChild(trS);
+      currentSection = r.section;
+    }
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${r.section? r.section : ''}</td>
+      <td>${r.category}</td>
+      <td>${r.product}</td>
+      <td>${(r.desc||'').replaceAll('\n','<br>')}</td>
+      <td class="nw">${r.qty}</td>
+      <td class="nw">$${r.unit.toLocaleString()}</td>
+      <td class="nw"><div class="inline"><input type="number" min="0" max="100" value="${r.discPct}" style="width:80px" oninput="setPerLineDiscount('${r.discKey}', this.value)"> <span>%</span></div></td>
+      <td class="nw"><strong>$${r.net.toLocaleString()}</strong><div class="muted">(−$${r.disc.toLocaleString()} disc)</div></td>`;
+    tbl.appendChild(tr);
+  });
+
+  // Totals (simplified wording)
+  const t1 = document.createElement('tr');
+  t1.innerHTML = `<td colspan="7" style="text-align:right"><strong>Total Discount</strong></td><td class="nw"><strong>−$${totalDiscount.toLocaleString()}</strong></td>`;
+  tbl.appendChild(t1);
+  const t2 = document.createElement('tr');
+  t2.innerHTML = `<td colspan="7" style="text-align:right;font-size:15px"><strong>Total Payable (after discounts)</strong></td><td class="nw" style="font-size:15px"><strong>$${grandTotal.toLocaleString()}</strong></td>`;
+  tbl.appendChild(t2);
+
+  const slot = document.getElementById('quoteTable');
+  slot.innerHTML = '';
+  slot.appendChild(tbl);
+}
+
+/* ================= Utilities ================= */
+// Ensure borders survive Outlook paste by inlining table/cell borders & legacy attributes.
+function applyInlineEmailStyles(tableNode){
+  tableNode.setAttribute('border','1');
+  tableNode.setAttribute('cellspacing','0');
+  tableNode.setAttribute('cellpadding','6');
+  tableNode.style.borderCollapse = 'collapse';
+  tableNode.style.width = '100%';
+  tableNode.querySelectorAll('th,td').forEach(el=>{
+    el.style.border = '1px solid #000';
+    el.style.padding = '6px';
+    el.style.verticalAlign = 'top';
+  });
+  // Make header background visible in clients that support it (harmless elsewhere)
+  tableNode.querySelectorAll('th').forEach(th=>{
+    th.style.background = '#14223b';
+    th.style.color = '#ffffff';
+  });
+  // Section rows
+  tableNode.querySelectorAll('td.section').forEach(td=>{
+    td.style.background = '#f2f5fb';
+    td.style.color = '#333333';
+    td.style.fontWeight = '700';
+  });
+}
+
+function copyHTMLTable(){
+  const table = document.getElementById('quoteTableInner');
+  if (!table){ alert('Nothing to copy yet.'); return; }
+  // Clone and replace discount inputs with text values
+  const clone = table.cloneNode(true);
+  clone.querySelectorAll('td:nth-child(7)').forEach(td=>{
+    const input = td.querySelector('input');
+    if (input){ td.innerHTML = input.value + '%'; }
+  });
+  // Force inline styles & borders for Outlook
+  applyInlineEmailStyles(clone);
+
+  const html = `<meta charset="utf-8">${clone.outerHTML}`;
+
+  if (navigator.clipboard && window.ClipboardItem){
+    const data = new ClipboardItem({
+      'text/html': new Blob([html], {type: 'text/html'}),
+      'text/plain': new Blob([clone.innerText], {type: 'text/plain'})
+    });
+    navigator.clipboard.write([data]).then(()=>{ alert('Table copied with full borders. Paste directly into Outlook.'); }).catch(()=>fallbackCopy(html));
+  } else {
+    fallbackCopy(html);
+  }
+}
+function fallbackCopy(html){
+  const div = document.createElement('div');
+  div.contentEditable = true; div.style.position='fixed'; div.style.left='-9999px';
+  document.body.appendChild(div); div.innerHTML = html;
+  const range = document.createRange(); range.selectNodeContents(div);
+  const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(range);
+  try{ document.execCommand('copy'); alert('Table copied.'); } catch(e){ alert('Copy failed. Please try again.'); }
+  sel.removeAllRanges(); document.body.removeChild(div);
+}
+
+function exportCSV(){
+  const table = document.getElementById('quoteTableInner');
+  if (!table){ alert('Nothing to export yet.'); return; }
+  const rows = Array.from(table.querySelectorAll('tr'));
+  const out = [];
+  out.push(['Section','Category','Product','Description','Qty','Unit','Discount %','Line Total']);
+
+  rows.slice(1).forEach(tr=>{
+    const tds = tr.querySelectorAll('td');
+    if (!tds.length) return;
+    if (tds[0].classList.contains('section')) return;
+    if (tds.length===2) return; // totals handled below
+    if (tds.length>=8){
+      const discInput = tds[6].querySelector('input');
+      const discText = discInput? discInput.value : tds[6].innerText.replace('%','').trim();
+      out.push([
+        tds[0].innerText.trim(),
+        tds[1].innerText.trim(),
+        tds[2].innerText.trim(),
+        tds[3].innerText.replace(/\n/g,' ').trim(),
+        tds[4].innerText.trim(),
+        tds[5].innerText.replace('$','').replace(/,/g,'').trim(),
+        discText,
+        tds[7].innerText.replace(/.*\$([\d,\.]+).*/, '$1')
+      ]);
+    }
+  });
+  const totalDiscRow = rows[rows.length-2].querySelectorAll('td');
+  const totalPayRow = rows[rows.length-1].querySelectorAll('td');
+  out.push(['','','Total Discount','','','','', totalDiscRow[1]?.innerText.replace(/[−$]/g,'').trim() || '']);
+  out.push(['','','Total Payable (after discounts)','','','','', totalPayRow[1]?.innerText.replace(/[$]/g,'').trim() || '']);
+
+  const csv = out.map(r=> r.map(v=> '"'+String(v).replaceAll('"','""')+'"').join(',')).join('\n');
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = 'quotation.csv'; a.click(); URL.revokeObjectURL(url);
+}
+
+function resetAll(){
+  // core
+  document.getElementById('coreMonitoring').checked = false;
+  document.getElementById('coreOutreach').checked = false;
+  document.getElementById('addUsersMonitoring').value = 0;
+  document.getElementById('addUsersOutreach').value = 0;
+  state.core.monitoring=false; state.core.outreach=false;
+  state.addUsers.monitoring=0; state.addUsers.outreach=0;
+
+  // addons
+  PRICING.addons.forEach(a=>{
+    const el = document.getElementById(`add_${a.key}`); if (el) el.checked = false;
+    state.addons[a.key] = {selected:false};
+  });
+
+  // csl
+  document.querySelectorAll('input[name="cslPlan"]').forEach(r=>{ r.checked=false; r.disabled=true; });
+  document.getElementById('cslQueries').value = ''; document.getElementById('cslQueries').disabled = true;
+  state.csl = { plan:null, queries:null };
+
+  // discounts
+  for (const k in lineDiscounts){ delete lineDiscounts[k]; }
+
+  onCoreToggle();
+}
+
+/* Boot */
+init();
+</script>
+</body>
+</html>
